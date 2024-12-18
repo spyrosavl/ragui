@@ -28,4 +28,5 @@ dev = [
     "langchain>=0.3.12",
     "langchain-community>=0.3.12",
     "python-dotenv>=1.0.1",
+    "pytest>=8.3.4",
 ]
