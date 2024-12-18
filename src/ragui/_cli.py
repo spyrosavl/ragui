@@ -13,7 +13,7 @@ def dev(script: str, port: int = 8000, reload: bool = True):
     Run RagUI server for local development.
 
     Example:
-        ragui dev main.py
+        ragui main.py
     """
     script_path = Path(script)
 
