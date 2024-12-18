@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>RagUI WebSocket Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100">
+    <div class="max-w-4xl mx-auto p-4">
+        <h1 class="text-2xl font-bold mb-4">RagUI Chat Test</h1>
+
+        <!-- Connection Status -->
+        <div class="mb-4">
+            <span id="status" class="px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                Disconnected
+            </span>
+        </div>
+
+        <!-- Chat Messages -->
+        <div id="messages" class="bg-white rounded-lg shadow-sm p-4 mb-4 h-[500px] overflow-y-auto space-y-4">
+        </div>
+
+        <!-- Input Form -->
+        <form id="chatForm" class="flex gap-2">
+            <input type="text" id="messageInput"
+                class="flex-1 rounded-lg border p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Type your message...">
+            <button type="submit"
+                class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                Send
+            </button>
+        </form>
+    </div>
+
+    <script>
+        const ws = new WebSocket('ws://localhost:8000/ws/chat/mypipeline');
+        const statusEl = document.getElementById('status');
+        const messagesEl = document.getElementById('messages');
+        const chatForm = document.getElementById('chatForm');
+        const messageInput = document.getElementById('messageInput');
+        let chatHistory = [];
+        let currentMessageEl = null;
+        let messageBuffer = '';
+        let isGenerating = false;
+        let inactivityTimeout;
+
+        ws.onopen = () => {
+            statusEl.textContent = 'Connected';
+            statusEl.className = 'px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800';
+        };
+
+        ws.onclose = () => {
+            statusEl.textContent = 'Disconnected';
+            statusEl.className = 'px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800';
+            isGenerating = false;
+            messageInput.disabled = false;
+        };
+
+        function createTypingIndicator() {
+            const indicator = document.createElement('div');
+            indicator.className = 'p-3 rounded-lg bg-gray-50 mr-12 animate-pulse';
+            indicator.innerHTML = '<div class="flex space-x-2"><div class="w-2 h-2 bg-gray-300 rounded-full"></div><div class="w-2 h-2 bg-gray-300 rounded-full"></div><div class="w-2 h-2 bg-gray-300 rounded-full"></div></div>';
+            return indicator;
+        }
+
+        function finalizeMessage() {
+            if (currentMessageEl) {
+                chatHistory.push({
+                    type: 'assistant',
+                    content: currentMessageEl.textContent
+                });
+                currentMessageEl = null;
+                messageBuffer = '';
+                isGenerating = false;
+                messageInput.disabled = false;
+                inactivityTimeout = null;
+            }
+        }
+
+        ws.onmessage = (event) => {
+            if (!currentMessageEl) {
+                const typingIndicator = messagesEl.querySelector('.animate-pulse');
+                if (typingIndicator) {
+                    typingIndicator.remove();
+                }
+
+                currentMessageEl = document.createElement('div');
+                currentMessageEl.className = 'p-3 rounded-lg bg-gray-100 mr-12 whitespace-pre-wrap';
+                messagesEl.appendChild(currentMessageEl);
+            }
+
+            const text = event.data;
+            if (text === '\n' && !currentMessageEl.textContent.trim()) {
+                return;
+            }
+
+            messageBuffer += text;
+            currentMessageEl.textContent = messageBuffer;
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+
+            // Clear previous timeout
+            if (inactivityTimeout) {
+                clearTimeout(inactivityTimeout);
+            }
+
+            // Set timeout to finalize message after 500ms of inactivity
+            inactivityTimeout = setTimeout(() => {
+                finalizeMessage();
+            }, 500);
+        };
+
+        chatForm.onsubmit = (e) => {
+            e.preventDefault();
+            const message = messageInput.value.trim();
+            if (!message || isGenerating) return;
+
+            isGenerating = true;
+            messageInput.disabled = true;
+
+            const userMessageEl = document.createElement('div');
+            userMessageEl.className = 'p-3 rounded-lg bg-blue-100 ml-12';
+            userMessageEl.textContent = message;
+            messagesEl.appendChild(userMessageEl);
+
+            messagesEl.appendChild(createTypingIndicator());
+
+            chatHistory.push({
+                type: 'user',
+                content: message
+            });
+
+            currentMessageEl = null;
+            messageBuffer = '';
+            messageInput.value = '';
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+
+            ws.send(JSON.stringify({
+                input: message,
+                chat_history: chatHistory
+            }));
+        };
+
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                chatForm.dispatchEvent(new Event('submit'));
+            }
+        });
+
+        ws.onerror = () => {
+            isGenerating = false;
+            messageInput.disabled = false;
+        };
+    </script>
+</body>
+
+</html>
