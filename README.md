@@ -62,3 +62,17 @@ Visit `http://localhost:8000/test` to interact with your pipeline.
 - **Production Ready**: Built with production use-cases in mind
 - **Future Proof**: As we add features, your application automatically gets upgrades
 - **Full Control**: Customize and extend any aspect of the framework
+
+## Roadmap
+- [ ] Simple UI for text input/output
+- [ ] Feedback collection
+- [ ] Support files input
+- [ ] Support for multiple pipelines
+- [ ] Support for audio input
+- [ ] Messages persistence (database)
+- [ ] Conversation history
+- [ ] User authentication
+- [ ] Admin dashboard
+- [ ] Add to website support (little chat bubble on the corner)
+- [ ] Usage metrics
+- [ ] Subscription management
