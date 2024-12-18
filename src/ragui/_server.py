@@ -90,7 +90,7 @@ async def health_check():
     return {"status": "ok"}
 
 
-@app.get("/test", response_class=HTMLResponse)
+@app.get("/", response_class=HTMLResponse)
 async def test_page():
     html_file = Path(__file__).parent / "templates" / "websocket_test.html"
     return html_file.read_text()

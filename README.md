@@ -54,7 +54,7 @@ Launch your application:
 ragui main.py
 ```
 
-Visit `http://localhost:8000/test` to interact with your pipeline.
+Visit `http://localhost:8000` to interact with your pipeline.
 
 ## Why RagUI?
 
