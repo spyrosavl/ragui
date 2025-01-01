@@ -6,17 +6,28 @@ RagUI is a Python framework that transforms your RAG (Retrieval Augmented Genera
 
 - **Instant Web Interface**: Get a polished chat UI for your RAG pipeline with zero frontend code
 - **Production Ready**: Built on FastAPI and async Python for high performance
-- **Developer Focused**: Focus on your RAG logic while we handle the infrastructure
 - **Framework Agnostic**: Works with LangChain, LlamaIndex, or your custom LLM implementation
-- **Flexible Integration**: Adapt any existing RAG pipeline with minimal changes
+- **Fast Onboarding**: Adapt any existing RAG pipeline with minimal changes
 
 **Coming Soon:**
+- 💾 Conversation History & Analytics
+- 🔄 Feedback Collection & Fine-tuning
 - 🔒 Authentication & User Management
 - 📊 Admin Dashboard
-- 💾 Conversation History & Analytics
 - 💰 Subscription Management
-- 🔄 Feedback Collection & Fine-tuning
-- 📈 Usage Metrics & Monitoring
+
+## Alternatives
+| **Feature**                           | **RagUI**               | **Streamlit**                     | **Gradio**                        |
+|--------------------------------------|:-----------------------:|:---------------------------------:|:---------------------------------:|
+| **Production Focus**                 | ✅ Built on FastAPI     | ⚠️ Possible but manual setup      | ⚠️ Commonly used for demos          |
+| **RAG-Centric**                      | ✅ Purpose-built        | ❌ General-purpose                | ❌ General-purpose                |
+| **Multiple Pipelines**               | 🚧 On roadmap           | ❌ Must wire manually             | ❌ Must wire manually             |
+| **Conversation Persistence**         | 🚧 On roadmap           | ❌ Manual DB integration          | ❌ Manual DB integration          |
+| **Feedback Collection**              | 🚧 On roadmap           | ❌ Custom coding                  | ❌ Custom coding                  |
+| **User Authentication**              | 🚧 On roadmap           | ❌ No built-in                    | ❌ No built-in                    |
+| **Usage Metrics**                    | 🚧 On roadmap           | ❌ Need external services         | ❌ Need external services         |
+| **Admin Dashboard**                  | 🚧 On roadmap           | ❌ Custom or third-party          | ❌ Custom or third-party          |
+
 
 ## Quick Start
 
@@ -64,15 +75,43 @@ Visit `http://localhost:8000` to interact with your pipeline.
 - **Full Control**: Customize and extend any aspect of the framework
 
 ## Roadmap
-- [ ] Simple UI for text input/output
-- [ ] Feedback collection
-- [ ] Support files input
-- [ ] Support for multiple pipelines
-- [ ] Support for audio input
-- [ ] Messages persistence (database)
-- [ ] Conversation history
-- [ ] User authentication
-- [ ] Admin dashboard
-- [ ] Add to website support (little chat bubble on the corner)
-- [ ] Usage metrics
-- [ ] Subscription management
+
+### Phase 1: Core Functionality (MVP)
+- [ ] **Simple UI for text input/output**
+  - The essential starting point: a user-friendly interface for sending and receiving messages.
+
+- [ ] **Messages Persistence (Database)**
+  - Store chat data for future reference, analytics, and advanced features.
+
+- [ ] **Conversation History**
+  - Enable users to review previous messages and maintain context across sessions.
+
+### Phase 2: Feature Expansion
+- [ ] **Support for Multiple Pipelines**
+  - Allow different RAG flows or LLM backends within a single deployment.
+
+- [ ] **Feedback Collection**
+  - Gather user feedback for iterative improvements and model fine-tuning.
+
+- [ ] **Support for File Input**
+  - Accept documents, PDFs, or other file types as context sources for RAG.
+
+- [ ] **Support for Audio Input**
+  - Expand interaction possibilities by handling voice-based queries.
+
+### Phase 3: Production Hardening
+- [ ] **User Authentication**
+  - Secure access control, user profiles, and personalized interactions.
+
+- [ ] **Usage Metrics**
+  - Track requests, errors, response times, and user engagement to guide scaling.
+
+- [ ] **Admin Dashboard**
+  - Centralize management of pipelines, users, and overall system health.
+
+### Phase 4: Monetization & Advanced Integrations
+- [ ] **Subscription Management**
+  - Implement billing, tiered plans, and payment handling for monetized deployments.
+
+- [ ] **Add to Website Support (Chat Bubble)**
+  - Easily embed RagUI as a widget on external websites for broader audience reach.
