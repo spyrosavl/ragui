@@ -38,7 +38,7 @@ streaming_chain = prompt
 
 
 @ragui.pipeline(
-    title="Funny Chatbot",
+    title="😂 Funny Chatbot",
     disclaimer=None,
     info=None,
     sample_questions=["Tell me a joke", "Write a funny story"],
@@ -59,7 +59,7 @@ async def funny_chatbot(
 
 
 @ragui.pipeline(
-    title="Horror Chatbot",
+    title="🧟 Horror Chatbot",
     disclaimer=None,
     info=None,
     sample_questions=[
