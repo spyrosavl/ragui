@@ -24,7 +24,7 @@ RagUI is a Python framework that transforms your RAG (Retrieval Augmented Genera
 |--------------------------------------|:-----------------------:|:---------------------------------:|:---------------------------------:|
 | **Production Focus**                 | ✅ Built on FastAPI     | ⚠️ Possible but manual setup      | ⚠️ Commonly used for demos          |
 | **RAG-Centric**                      | ✅ Purpose-built        | ❌ General-purpose                | ❌ General-purpose                |
-| **Multiple Pipelines**               | 🚧 On roadmap           | ❌ Must wire manually             | ❌ Must wire manually             |
+| **Multiple Pipelines**               | ✅ Out of the box       | ❌ Must wire manually             | ❌ Must wire manually             |
 | **Conversation Persistence**         | 🚧 On roadmap           | ❌ Manual DB integration          | ❌ Manual DB integration          |
 | **Feedback Collection**              | 🚧 On roadmap           | ❌ Custom coding                  | ❌ Custom coding                  |
 | **User Authentication**              | 🚧 On roadmap           | ❌ No built-in                    | ❌ No built-in                    |
@@ -54,7 +54,13 @@ prompt = ChatPromptTemplate.from_messages([
 ])
 chain = prompt | ChatOpenAI() | StrOutputParser()
 
-@ragui.pipeline("RAG Pipeline")
+@ragui.pipeline(
+    title="RAG Pipeline",
+    disclaimer=None,
+    info=None,
+    sample_questions=["What is RAG?", "How does this work?"],
+    theme="light"
+)
 async def rag_pipeline(query, message_history, user_context):
     async for chunk in chain.astream({
         "context": "Your retrieved context here",
@@ -71,6 +77,8 @@ ragui main.py
 
 Visit `http://localhost:8000` to interact with your pipeline.
 
+For a more sophisticated example with multiple themed pipelines, check out our [example implementation](https://github.com/spyrosavl/ragui/blob/main/examples/main.py).
+
 ## Why RagUI?
 
 - **Save Development Time**: Focus on your RAG logic instead of building UI/infrastructure
@@ -81,8 +89,11 @@ Visit `http://localhost:8000` to interact with your pipeline.
 ## Roadmap
 
 ### Phase 1: Core Functionality (MVP)
-- [ ] **Simple UI for text input/output**
+- [x] **Simple UI for text input/output**
   - The essential starting point: a user-friendly interface for sending and receiving messages.
+
+- [x] **Support for Multiple Pipelines**
+  - Allow different RAG flows or LLM backends within a single deployment.
 
 - [ ] **Messages Persistence (Database)**
   - Store chat data for future reference, analytics, and advanced features.
@@ -90,13 +101,10 @@ Visit `http://localhost:8000` to interact with your pipeline.
 - [ ] **Conversation History**
   - Enable users to review previous messages and maintain context across sessions.
 
-### Phase 2: Feature Expansion
-- [ ] **Support for Multiple Pipelines**
-  - Allow different RAG flows or LLM backends within a single deployment.
-
 - [ ] **Feedback Collection**
   - Gather user feedback for iterative improvements and model fine-tuning.
 
+### Phase 2: Feature Expansion
 - [ ] **Support for File Input**
   - Accept documents, PDFs, or other file types as context sources for RAG.
 
