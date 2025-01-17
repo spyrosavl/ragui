@@ -2,6 +2,9 @@
 
 RagUI is a Python framework that transforms your RAG (Retrieval Augmented Generation) pipelines into production-ready web applications. It's framework-agnostic and works seamlessly with popular LLM frameworks like LangChain and LlamaIndex.
 
+## ⚠️ Development Status
+**WARNING**: RagUI is undergoing rapid development and frequent changes. For the latest features and fixes, we recommend installing directly from the GitHub repository rather than PyPI.
+
 ## Features
 
 - **Instant Web Interface**: Get a polished chat UI for your RAG pipeline with zero frontend code
@@ -31,8 +34,9 @@ RagUI is a Python framework that transforms your RAG (Retrieval Augmented Genera
 
 ## Quick Start
 
+Install from GitHub repository (recommended for latest features during initial development):
 ```bash
-pip install ragui
+pip install git+https://github.com/spyrosavl/ragui.git
 ```
 
 Create a pipeline (`main.py`):
