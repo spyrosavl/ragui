@@ -38,13 +38,37 @@ streaming_chain = prompt
 
 
 @ragui.pipeline(
-    title="My Pipeline",
+    title="Funny Chatbot",
     disclaimer=None,
     info=None,
-    sample_questions=["What is your name?"],
+    sample_questions=["Tell me a joke", "Write a funny story"],
+    theme="light",
+)
+async def funny_chatbot(
+    query: str,
+    message_history: List[Tuple[str, str]],
+    user_context: dict,
+):
+    """
+    RAG pipeline that retrieves relevant context and generates an answer.
+    """
+    async for chunk in chain.astream(
+        {"context": message_history, "user_message": query}
+    ):
+        yield chunk
+
+
+@ragui.pipeline(
+    title="Horror Chatbot",
+    disclaimer=None,
+    info=None,
+    sample_questions=[
+        "Tell me a scary story",
+        "What's the scariest movie you've seen?",
+    ],
     theme="dark",
 )
-async def mypipeline(
+async def horror_chatbot(
     query: str,
     message_history: List[Tuple[str, str]],
     user_context: dict,

@@ -36,9 +36,16 @@
 
         <!-- HEADER -->
         <header class="flex-none p-2 sm:p-4 bg-base-100 shadow-sm flex items-center justify-between">
-            <h1 class="font-bold text-lg sm:text-2xl">
-                {{ appTitle }}
-            </h1>
+            <div class="dropdown">
+                <label tabindex="0" class="btn m-1">
+                    {{ appTitle }} <i class="fas fa-chevron-down ml-2"></i>
+                </label>
+                <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
+                    <li v-for="(title, id) in availablePipelines" :key="id">
+                        <a @click="switchPipeline(id)" :class="{ 'active': id === pipelineId }">{{ title }}</a>
+                    </li>
+                </ul>
+            </div>
             <button v-if="appInfo" class="btn btn-outline" @click="showInfoModal = true">
                 Info
             </button>
@@ -134,6 +141,7 @@
                     mdParser: null,
                     appTheme: 'light',
                     pipelineId: '{{PIPELINE_ID}}',
+                    availablePipelines: {},
                 }
             },
             watch: {
@@ -175,6 +183,33 @@
                     } finally {
                         this.loading = false;
                     }
+                },
+
+                async fetchPipelines() {
+                    try {
+                        const response = await fetch('/pipelines');
+                        this.availablePipelines = await response.json();
+                    } catch (err) {
+                        console.error('Failed to fetch pipelines:', err);
+                    }
+                },
+
+                async switchPipeline(newPipelineId) {
+                    if (newPipelineId === this.pipelineId) return;
+
+                    // Close existing websocket
+                    if (this.ws) {
+                        this.ws.close();
+                    }
+
+                    // Clear messages
+                    this.messages = [];
+                    this.currentAssistantMessage = null;
+                    this.pipelineId = newPipelineId;
+
+                    // Load new pipeline config and initialize
+                    await this.fetchConfig();
+                    this.initWebSocket();
                 },
 
                 initWebSocket() {
@@ -252,6 +287,7 @@
             },
             async mounted() {
                 this.mdParser = window.markdownit();
+                await this.fetchPipelines();
                 await this.fetchConfig();
                 this.initWebSocket();
             }

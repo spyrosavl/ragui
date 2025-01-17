@@ -116,5 +116,6 @@ async def pipelines():
 async def test_page():
     html_file = Path(__file__).parent / "templates" / "websocket_test.html"
     html_content = html_file.read_text()
-    pipeline_id = "mypipeline"  # Or however you want to determine the default pipeline
+    # Get first available pipeline ID
+    pipeline_id = next(iter(ragui.pipelines.keys()))
     return html_content.replace("{{PIPELINE_ID}}", pipeline_id)
