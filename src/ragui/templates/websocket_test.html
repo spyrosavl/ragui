@@ -52,9 +52,11 @@
         </header>
 
         <!-- MAIN CHAT AREA -->
-        <main class="flex-1 flex flex-col p-2 sm:p-4 pb-32 bg-base-100"> <!-- Added pb-32 for input space -->
+        <main class="flex-1 flex flex-col p-2 sm:p-4 bg-base-100 overflow-hidden">
+            <!-- Remove pb-32 and add overflow-hidden -->
             <div id="messages"
-                class="flex-1 bg-base-200 rounded-lg shadow-sm p-2 sm:p-4 overflow-y-auto space-y-2 sm:space-y-4 min-h-0 flex flex-col scroll-smooth">
+                class="flex-1 bg-base-200 rounded-lg shadow-sm p-2 sm:p-4 overflow-y-auto space-y-2 sm:space-y-4 min-h-0 flex flex-col scroll-smooth mb-24">
+                <!-- Add mb-24 for bottom margin -->
                 <!-- Show sample questions only if messages is empty -->
                 <div v-if="sampleQuestions.length > 0 && messages.length === 0"
                     class="flex-1 flex flex-col items-center justify-center">
@@ -93,11 +95,12 @@
         <!-- Fixed Input Form -->
         <div class="fixed bottom-0 left-0 right-0 bg-base-100 p-2 sm:p-4 shadow-lg">
             <form @submit.prevent="sendMessage" class="flex gap-2 w-full">
-                <textarea v-model="messageInput" rows="2" class="textarea textarea-bordered flex-1 resize-none min-w-0"
+                <textarea v-model="messageInput" :disabled="isResponding" rows="2"
+                    class="textarea textarea-bordered flex-1 resize-none min-w-0"
                     placeholder="Type your message (Shift+Enter for new line)..."
                     @keydown.enter.exact.prevent="sendMessage">
                 </textarea>
-                <button type="submit"
+                <button type="submit" :disabled="isResponding"
                     class="btn btn-outline min-h-[auto] h-auto aspect-square flex items-center justify-center flex-none">
                     <i class="fas fa-paper-plane"></i>
                 </button>
@@ -128,6 +131,7 @@
                     messageInput: '',
                     currentAssistantMessage: null,
                     inactivityTimeout: null,
+                    lastMessageTime: 0,
 
                     appTitle: '',
                     appDisclaimer: '',
@@ -142,6 +146,7 @@
                     appTheme: 'light',
                     pipelineId: '{{PIPELINE_ID}}',
                     availablePipelines: {},
+                    isResponding: false,
                 }
             },
             watch: {
@@ -225,27 +230,46 @@
                     this.ws = new WebSocket(wsUrl);
 
                     this.ws.onopen = () => console.log('WebSocket connected');
-                    this.ws.onclose = () => console.log('WebSocket disconnected');
-                    this.ws.onerror = () => console.log('WebSocket error');
+                    this.ws.onclose = () => {
+                        console.log('WebSocket disconnected');
+                        this.isResponding = false;  // Reset on disconnect
+                    };
+                    this.ws.onerror = () => {
+                        console.log('WebSocket error');
+                        this.isResponding = false;  // Reset on error
+                    };
 
                     this.ws.onmessage = (event) => {
-                        if (!this.currentAssistantMessage) {
-                            this.currentAssistantMessage = {
-                                type: 'assistant',
-                                content: '',
-                                voted: null  // null, 'up', or 'down'
-                            };
-                            this.messages.push(this.currentAssistantMessage);
-                        }
-                        this.currentAssistantMessage.content += event.data;
+                        try {
+                            // Check if it's a completion message
+                            const data = JSON.parse(event.data);
+                            if (data.status === 'complete') {
+                                this.finalizeMessage();
+                                return;
+                            }
+                        } catch {
+                            // Not JSON, handle as regular message chunk
+                            this.isResponding = true;
+                            const now = Date.now();
 
-                        if (this.inactivityTimeout) clearTimeout(this.inactivityTimeout);
-                        this.inactivityTimeout = setTimeout(() => this.finalizeMessage(), 500);
+                            if (!this.currentAssistantMessage || (now - this.lastMessageTime > 5000)) {
+                                this.currentAssistantMessage = {
+                                    type: 'assistant',
+                                    content: '',
+                                    voted: null
+                                };
+                                this.messages.push(this.currentAssistantMessage);
+                            }
+
+                            this.currentAssistantMessage.content += event.data;
+                            this.lastMessageTime = now;
+                        }
                     };
                 },
 
                 finalizeMessage() {
                     this.currentAssistantMessage = null;
+                    this.isResponding = false;
                 },
 
                 scrollToBottom() {
@@ -265,6 +289,7 @@
                     this.currentAssistantMessage = null;
                     this.messageInput = '';
                     this.ws.send(JSON.stringify({ input: msg, chat_history: this.messages }));
+                    this.isResponding = true;  // Set to true when sending
                 },
 
                 acceptDisclaimer() {

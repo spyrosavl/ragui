@@ -93,6 +93,9 @@ async def websocket_chat(websocket: WebSocket, pipeline_id: str):
             ):
                 await websocket.send_text(chunk)
 
+            # Send completion marker
+            await websocket.send_json({"status": "complete"})
+
     except WebSocketDisconnect:
         # Handle client disconnect
         pass
