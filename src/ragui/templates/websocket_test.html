@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-    <title>Vue Full-Screen Chat (Config & Disclaimer)</title>
+    <title>Loading...</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.23/dist/full.min.css" rel="stylesheet" type="text/css" />
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
@@ -155,6 +155,12 @@
                 appTheme: {
                     handler(newTheme) {
                         this.updateTheme(newTheme);
+                    },
+                    immediate: true
+                },
+                appTitle: {
+                    handler(newTitle) {
+                        document.title = newTitle || 'RagUI Chat';
                     },
                     immediate: true
                 }
