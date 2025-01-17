@@ -31,7 +31,9 @@ def load_ragui():
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=[
+        "*"
+    ],  # Since we're serving UI from same origin, this is less critical
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -48,6 +50,21 @@ class ChatInput(BaseModel):
     chat_history: List[Message] = Field(
         ..., title="Chat history", description="Chat history messages"
     )
+
+
+@app.get("/api/config/{pipeline_id}")
+async def get_config(pipeline_id: str):
+    if ragui is None:
+        return {"error": "RagUI not initialized"}
+
+    if pipeline_id not in ragui.pipelines:
+        return {"error": "Pipeline not found"}
+
+    # Remove the `function` attribute from the pipeline config
+    pipeline_config = ragui.pipelines[pipeline_id].dict()
+    pipeline_config.pop("function")
+
+    return pipeline_config
 
 
 @app.websocket("/ws/chat/{pipeline_id}")
@@ -69,7 +86,7 @@ async def websocket_chat(websocket: WebSocket, pipeline_id: str):
             message = ChatInput(**data)
 
             # Process message through pipeline
-            async for chunk in ragui.pipelines[pipeline_id](
+            async for chunk in ragui.pipelines[pipeline_id].function(
                 message.input,
                 [(m.type, m.content) for m in message.chat_history],
                 {},  # empty context for now
@@ -90,7 +107,14 @@ async def health_check():
     return {"status": "ok"}
 
 
+@app.get("/pipelines")
+async def pipelines():
+    return {k: v.title for k, v in ragui.pipelines.items()}
+
+
 @app.get("/", response_class=HTMLResponse)
 async def test_page():
     html_file = Path(__file__).parent / "templates" / "websocket_test.html"
-    return html_file.read_text()
+    html_content = html_file.read_text()
+    pipeline_id = "mypipeline"  # Or however you want to determine the default pipeline
+    return html_content.replace("{{PIPELINE_ID}}", pipeline_id)

@@ -37,7 +37,13 @@ chain = prompt | ChatOpenAI(model="gpt-4o-mini") | StrOutputParser()
 streaming_chain = prompt
 
 
-@ragui.pipeline("My Pipeline")
+@ragui.pipeline(
+    title="My Pipeline",
+    disclaimer=None,
+    info=None,
+    sample_questions=["What is your name?"],
+    theme="dark",
+)
 async def mypipeline(
     query: str,
     message_history: List[Tuple[str, str]],

@@ -1,158 +1,263 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-    <title>RagUI WebSocket Test</title>
+    <title>Vue Full-Screen Chat (Config & Disclaimer)</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.23/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it/dist/markdown-it.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/theme-change@2.0.2/index.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+        integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
 
-<body class="bg-gray-100">
-    <div class="max-w-4xl mx-auto p-4">
-        <h1 class="text-2xl font-bold mb-4">RagUI Chat Test</h1>
+<body class="min-h-screen">
 
-        <!-- Connection Status -->
-        <div class="mb-4">
-            <span id="status" class="px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
-                Disconnected
-            </span>
-        </div>
+    <div id="app" class="flex flex-col min-h-screen bg-base-100">
 
-        <!-- Chat Messages -->
-        <div id="messages" class="bg-white rounded-lg shadow-sm p-4 mb-4 h-[500px] overflow-y-auto space-y-4">
-        </div>
-
-        <!-- Input Form -->
-        <form id="chatForm" class="flex gap-2">
-            <input type="text" id="messageInput"
-                class="flex-1 rounded-lg border p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Type your message...">
-            <button type="submit"
-                class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                Send
+        <!-- DISCLAIMER ACCEPTANCE OVERLAY -->
+        <div v-if="!disclaimerAccepted && appDisclaimer"
+            class="absolute inset-0 flex flex-col items-center justify-center bg-base-100 bg-opacity-90 z-20 p-4 text-center">
+            <!-- Render disclaimer as Markdown -->
+            <div v-html="appDisclaimer" class="max-w-md bg-base-200 p-4 rounded shadow-sm whitespace-pre-wrap"></div>
+            <button @click="acceptDisclaimer" class="mt-4 btn btn-primary">
+                Accept
             </button>
-        </form>
+        </div>
+
+        <!-- LOADING DISCLAIMER OVERLAY -->
+        <div v-if="loading && appDisclaimer"
+            class="absolute inset-0 flex flex-col items-center justify-center bg-base-100 bg-opacity-90 z-10 p-4 text-center">
+            <div v-html="appDisclaimer" class="max-w-md bg-base-200 p-4 rounded shadow-sm whitespace-pre-wrap"></div>
+            <p class="mt-4 text-gray-500 text-sm">Loading config...</p>
+        </div>
+
+        <!-- HEADER -->
+        <header class="flex-none p-2 sm:p-4 bg-base-100 shadow-sm flex items-center justify-between">
+            <h1 class="font-bold text-lg sm:text-2xl">
+                {{ appTitle }}
+            </h1>
+            <button v-if="appInfo" class="btn btn-outline" @click="showInfoModal = true">
+                Info
+            </button>
+        </header>
+
+        <!-- MAIN CHAT AREA -->
+        <main class="flex-1 flex flex-col p-2 sm:p-4 pb-32 bg-base-100"> <!-- Added pb-32 for input space -->
+            <div id="messages"
+                class="flex-1 bg-base-200 rounded-lg shadow-sm p-2 sm:p-4 overflow-y-auto space-y-2 sm:space-y-4 min-h-0 flex flex-col scroll-smooth">
+                <!-- Show sample questions only if messages is empty -->
+                <div v-if="sampleQuestions.length > 0 && messages.length === 0"
+                    class="flex-1 flex flex-col items-center justify-center">
+                    <h2 class="text-lg font-bold mb-4">Try asking one of these questions:</h2>
+                    <ul class="flex flex-col items-center space-y-2">
+                        <li v-for="(question, index) in sampleQuestions" :key="index">
+                            <button @click="pasteQuestion(question)" class="btn btn-outline">{{ question }}</button>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Messages container -->
+                <template v-else>
+                    <div v-for="(msg, index) in messages" :key="index"
+                        :class="['chat', msg.type === 'user' ? 'chat-end' : 'chat-start']">
+                        <div class="chat-bubble" v-if="msg.type === 'user'">{{ msg.content }}</div>
+                        <div class="chat-bubble" v-else v-html="parseMarkdown(msg.content)"></div>
+                        <div class="chat-footer opacity-70" v-if="msg.type === 'assistant'">
+                            <div class="flex space-x-2">
+                                <button class="btn btn-ghost btn-xs" @click="thumbsUp(msg)">
+                                    <i :class="msg.voted === 'up' ? 'fas fa-thumbs-up' : 'far fa-thumbs-up'"></i>
+                                </button>
+                                <button class="btn btn-ghost btn-xs" @click="thumbsDown(msg)">
+                                    <i :class="msg.voted === 'down' ? 'fas fa-thumbs-down' : 'far fa-thumbs-down'"></i>
+                                </button>
+                                <button class="btn btn-ghost btn-xs" @click="copyText(msg.content)">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </main>
+
+        <!-- Fixed Input Form -->
+        <div class="fixed bottom-0 left-0 right-0 bg-base-100 p-2 sm:p-4 shadow-lg">
+            <form @submit.prevent="sendMessage" class="flex gap-2 w-full">
+                <textarea v-model="messageInput" rows="2" class="textarea textarea-bordered flex-1 resize-none min-w-0"
+                    placeholder="Type your message (Shift+Enter for new line)..."
+                    @keydown.enter.exact.prevent="sendMessage">
+                </textarea>
+                <button type="submit"
+                    class="btn btn-outline min-h-[auto] h-auto aspect-square flex items-center justify-center flex-none">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
+        </div>
+
+        <!-- INFO MODAL -->
+        <div v-if="showInfoModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-20">
+            <div class="bg-base-100 max-w-lg w-full mx-2 p-4 rounded shadow-lg">
+                <h2 class="text-lg font-bold mb-2">Info</h2>
+                <div class="prose prose-sm sm:prose-base" v-html="appInfo"></div>
+                <div class="flex justify-end mt-4">
+                    <button class="btn btn-primary" @click="showInfoModal = false">Close</button>
+                </div>
+            </div>
+        </div>
+
     </div>
 
-    <script>
-        const ws = new WebSocket('ws://localhost:8000/ws/chat/mypipeline');
-        const statusEl = document.getElementById('status');
-        const messagesEl = document.getElementById('messages');
-        const chatForm = document.getElementById('chatForm');
-        const messageInput = document.getElementById('messageInput');
-        let chatHistory = [];
-        let currentMessageEl = null;
-        let messageBuffer = '';
-        let isGenerating = false;
-        let inactivityTimeout;
+    <script type="module">
+        const { createApp } = Vue
 
-        ws.onopen = () => {
-            statusEl.textContent = 'Connected';
-            statusEl.className = 'px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800';
-        };
+        createApp({
+            data() {
+                return {
+                    ws: null,
+                    messages: [],
+                    messageInput: '',
+                    currentAssistantMessage: null,
+                    inactivityTimeout: null,
 
-        ws.onclose = () => {
-            statusEl.textContent = 'Disconnected';
-            statusEl.className = 'px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800';
-            isGenerating = false;
-            messageInput.disabled = false;
-        };
+                    appTitle: '',
+                    appDisclaimer: '',
+                    appInfo: '',
+                    sampleQuestions: [],
 
-        function createTypingIndicator() {
-            const indicator = document.createElement('div');
-            indicator.className = 'p-3 rounded-lg bg-gray-50 mr-12 animate-pulse';
-            indicator.innerHTML = '<div class="flex space-x-2"><div class="w-2 h-2 bg-gray-300 rounded-full"></div><div class="w-2 h-2 bg-gray-300 rounded-full"></div><div class="w-2 h-2 bg-gray-300 rounded-full"></div></div>';
-            return indicator;
-        }
+                    loading: true,
+                    showInfoModal: false,
+                    disclaimerAccepted: localStorage.getItem('disclaimerAccepted') === 'true',
 
-        function finalizeMessage() {
-            if (currentMessageEl) {
-                chatHistory.push({
-                    type: 'assistant',
-                    content: currentMessageEl.textContent
-                });
-                currentMessageEl = null;
-                messageBuffer = '';
-                isGenerating = false;
-                messageInput.disabled = false;
-                inactivityTimeout = null;
-            }
-        }
-
-        ws.onmessage = (event) => {
-            if (!currentMessageEl) {
-                const typingIndicator = messagesEl.querySelector('.animate-pulse');
-                if (typingIndicator) {
-                    typingIndicator.remove();
+                    mdParser: null,
+                    appTheme: 'light',
+                    pipelineId: '{{PIPELINE_ID}}',
                 }
+            },
+            watch: {
+                // Add messages watcher
+                messages: {
+                    deep: true,
+                    handler() {
+                        this.scrollToBottom();
+                    }
+                },
+                appTheme: {
+                    handler(newTheme) {
+                        this.updateTheme(newTheme);
+                    },
+                    immediate: true
+                }
+            },
+            methods: {
+                updateTheme(theme) {
+                    document.body.setAttribute('data-theme', theme);
+                },
 
-                currentMessageEl = document.createElement('div');
-                currentMessageEl.className = 'p-3 rounded-lg bg-gray-100 mr-12 whitespace-pre-wrap';
-                messagesEl.appendChild(currentMessageEl);
+                parseMarkdown(text) {
+                    return this.mdParser.render(text);
+                },
+
+                async fetchConfig() {
+                    try {
+                        const response = await fetch(`/api/config/${this.pipelineId}`);
+                        const data = await response.json();
+                        this.appTitle = data.title || 'Chat';
+                        this.appDisclaimer = data.disclaimer || '';
+                        this.appInfo = data.info || '';
+                        this.sampleQuestions = data.sample_questions || [];
+                        this.appTheme = data.theme || 'light';
+                        this.updateTheme(this.appTheme); // Ensure theme is set after config loads
+                    } catch (err) {
+                        console.error('Failed to fetch config:', err);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                initWebSocket() {
+                    // Convert current http(s):// URL to ws(s):// for WebSocket
+                    const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+                    const wsUrl = `${wsProtocol}//${location.host}/ws/chat/${this.pipelineId}`;
+                    this.ws = new WebSocket(wsUrl);
+
+                    this.ws.onopen = () => console.log('WebSocket connected');
+                    this.ws.onclose = () => console.log('WebSocket disconnected');
+                    this.ws.onerror = () => console.log('WebSocket error');
+
+                    this.ws.onmessage = (event) => {
+                        if (!this.currentAssistantMessage) {
+                            this.currentAssistantMessage = {
+                                type: 'assistant',
+                                content: '',
+                                voted: null  // null, 'up', or 'down'
+                            };
+                            this.messages.push(this.currentAssistantMessage);
+                        }
+                        this.currentAssistantMessage.content += event.data;
+
+                        if (this.inactivityTimeout) clearTimeout(this.inactivityTimeout);
+                        this.inactivityTimeout = setTimeout(() => this.finalizeMessage(), 500);
+                    };
+                },
+
+                finalizeMessage() {
+                    this.currentAssistantMessage = null;
+                },
+
+                scrollToBottom() {
+                    this.$nextTick(() => {
+                        const messagesEl = document.getElementById('messages');
+                        if (messagesEl) {
+                            messagesEl.scrollTop = messagesEl.scrollHeight;
+                        }
+                    });
+                },
+
+                sendMessage() {
+                    const msg = this.messageInput.trim();
+                    if (!msg) return;
+
+                    this.messages.push({ type: 'user', content: msg });
+                    this.currentAssistantMessage = null;
+                    this.messageInput = '';
+                    this.ws.send(JSON.stringify({ input: msg, chat_history: this.messages }));
+                },
+
+                acceptDisclaimer() {
+                    this.disclaimerAccepted = true;
+                    localStorage.setItem('disclaimerAccepted', 'true');
+                },
+
+                pasteQuestion(question) {
+                    this.messageInput = question;
+                    this.sendMessage();
+                },
+
+                thumbsUp(msg) {
+                    msg.voted = msg.voted === 'up' ? null : 'up';
+                    console.log('Thumbs up for:', msg);
+                },
+
+                thumbsDown(msg) {
+                    msg.voted = msg.voted === 'down' ? null : 'down';
+                    console.log('Thumbs down for:', msg);
+                },
+
+                copyText(text) {
+                    navigator.clipboard.writeText(text).then(() => console.log('Copied:', text)).catch(err => console.error('Copy failed:', err));
+                }
+            },
+            async mounted() {
+                this.mdParser = window.markdownit();
+                await this.fetchConfig();
+                this.initWebSocket();
             }
-
-            const text = event.data;
-            if (text === '\n' && !currentMessageEl.textContent.trim()) {
-                return;
-            }
-
-            messageBuffer += text;
-            currentMessageEl.textContent = messageBuffer;
-            messagesEl.scrollTop = messagesEl.scrollHeight;
-
-            // Clear previous timeout
-            if (inactivityTimeout) {
-                clearTimeout(inactivityTimeout);
-            }
-
-            // Set timeout to finalize message after 500ms of inactivity
-            inactivityTimeout = setTimeout(() => {
-                finalizeMessage();
-            }, 500);
-        };
-
-        chatForm.onsubmit = (e) => {
-            e.preventDefault();
-            const message = messageInput.value.trim();
-            if (!message || isGenerating) return;
-
-            isGenerating = true;
-            messageInput.disabled = true;
-
-            const userMessageEl = document.createElement('div');
-            userMessageEl.className = 'p-3 rounded-lg bg-blue-100 ml-12';
-            userMessageEl.textContent = message;
-            messagesEl.appendChild(userMessageEl);
-
-            messagesEl.appendChild(createTypingIndicator());
-
-            chatHistory.push({
-                type: 'user',
-                content: message
-            });
-
-            currentMessageEl = null;
-            messageBuffer = '';
-            messageInput.value = '';
-            messagesEl.scrollTop = messagesEl.scrollHeight;
-
-            ws.send(JSON.stringify({
-                input: message,
-                chat_history: chatHistory
-            }));
-        };
-
-        messageInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                chatForm.dispatchEvent(new Event('submit'));
-            }
-        });
-
-        ws.onerror = () => {
-            isGenerating = false;
-            messageInput.disabled = false;
-        };
+        }).mount('#app');
     </script>
+
 </body>
 
 </html>
