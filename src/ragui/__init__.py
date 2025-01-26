@@ -1,6 +1,6 @@
-from typing import Callable, List, Literal, Optional, Union
+from typing import Callable, List, Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 DAISY_UI_THEMES = Literal[
     "light",

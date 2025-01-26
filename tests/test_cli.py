@@ -1,9 +1,6 @@
-import os
 from pathlib import Path
 from unittest.mock import patch, mock_open
 
-import pytest
-import typer
 from typer.testing import CliRunner
 
 from ragui._cli import app
