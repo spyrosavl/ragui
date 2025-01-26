@@ -20,6 +20,7 @@ jobs:
 
       - name: Run linter
         run: uv run pre-commit run --all-files
+
   test:
     name: Test Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
@@ -44,7 +45,7 @@ jobs:
           uv run pytest tests
 
   publish:
-    needs: test
+    needs: [ test, linter ]
     runs-on: ubuntu-latest
     if: github.event_name == 'release' && github.event.action == 'created'
     permissions:
