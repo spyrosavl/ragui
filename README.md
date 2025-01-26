@@ -1,4 +1,6 @@
 # RagUI
+[![Main](https://github.com/spyrosavl/ragui/actions/workflows/release.yml/badge.svg)](https://github.com/spyrosavl/ragui/actions/workflows/release.yml)
+![GitHub Repo stars](https://img.shields.io/github/stars/spyrosavl/ragui)
 
 RagUI is a Python framework that transforms your RAG (Retrieval Augmented Generation) pipelines into production-ready web applications. It's framework-agnostic and works seamlessly with popular LLM frameworks like LangChain and LlamaIndex.
 
