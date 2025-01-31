@@ -17,3 +17,6 @@ wheels/
 
 # UV lock file
 uv.lock
+
+# SQLite database files
+**/*.sqlite3

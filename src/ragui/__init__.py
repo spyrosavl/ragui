@@ -1,3 +1,3 @@
-from ._ragui import RagUI
+from .api.ragui import RagUI
 
 __all__ = ["RagUI"]

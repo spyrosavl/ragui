@@ -38,11 +38,11 @@
         <header class="flex-none p-2 sm:p-4 bg-base-100 shadow-sm flex items-center justify-between">
             <div class="dropdown">
                 <label tabindex="0" class="btn m-1">
-                    {{ appTitle }} <i class="fas fa-chevron-down ml-2"></i>
+                    [[ appTitle ]] <i class="fas fa-chevron-down ml-2"></i>
                 </label>
                 <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
                     <li v-for="(title, id) in availablePipelines" :key="id">
-                        <a @click="switchPipeline(id)" :class="{ 'active': id === pipelineId }">{{ title }}</a>
+                        <a @click="switchPipeline(id)" :class="{ 'active': id === pipelineId }">[[ title ]]</a>
                     </li>
                 </ul>
             </div>
@@ -63,7 +63,7 @@
                     <h2 class="text-lg font-bold mb-4">Try asking one of these questions:</h2>
                     <ul class="flex flex-col items-center space-y-2">
                         <li v-for="(question, index) in sampleQuestions" :key="index">
-                            <button @click="pasteQuestion(question)" class="btn btn-outline">{{ question }}</button>
+                            <button @click="pasteQuestion(question)" class="btn btn-outline">[[ question ]]</button>
                         </li>
                     </ul>
                 </div>
@@ -72,7 +72,7 @@
                 <template v-else>
                     <div v-for="(msg, index) in messages" :key="index"
                         :class="['chat', msg.type === 'user' ? 'chat-end' : 'chat-start']">
-                        <div class="chat-bubble" v-if="msg.type === 'user'">{{ msg.content }}</div>
+                        <div class="chat-bubble" v-if="msg.type === 'user'">[[ msg.content ]]</div>
                         <div class="chat-bubble" v-else v-html="parseMarkdown(msg.content)"></div>
                         <div class="chat-footer opacity-70" v-if="msg.type === 'assistant'">
                             <div class="flex space-x-2">
@@ -124,6 +124,7 @@
         const { createApp } = Vue
 
         createApp({
+            delimiters: ['[[', ']]'],
             data() {
                 return {
                     ws: null,
@@ -144,7 +145,7 @@
 
                     mdParser: null,
                     appTheme: 'light',
-                    pipelineId: '{{PIPELINE_ID}}',
+                    pipelineId: 'funny_chatbot',
                     availablePipelines: {},
                     isResponding: false,
                 }
@@ -181,7 +182,7 @@
 
                 async fetchConfig() {
                     try {
-                        const response = await fetch(`/api/config/${this.pipelineId}`);
+                        const response = await fetch(`/api/v1/chats/pipeline/${this.pipelineId}/`);
                         const data = await response.json();
                         this.appTitle = data.title || 'Chat';
                         this.appDisclaimer = data.disclaimer || '';
@@ -198,7 +199,7 @@
 
                 async fetchPipelines() {
                     try {
-                        const response = await fetch('/pipelines');
+                        const response = await fetch('/api/v1/chats/pipelines');
                         this.availablePipelines = await response.json();
                     } catch (err) {
                         console.error('Failed to fetch pipelines:', err);
@@ -226,7 +227,7 @@
                 initWebSocket() {
                     // Convert current http(s):// URL to ws(s):// for WebSocket
                     const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-                    const wsUrl = `${wsProtocol}//${location.host}/ws/chat/${this.pipelineId}`;
+                    const wsUrl = `${wsProtocol}//${location.host}/api/v1/chats/ws/chat/${this.pipelineId}`;
                     this.ws = new WebSocket(wsUrl);
 
                     this.ws.onopen = () => console.log('WebSocket connected');

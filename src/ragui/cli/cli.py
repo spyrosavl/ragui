@@ -30,7 +30,7 @@ def dev(script: str, port: int = 8000, reload: bool = True):
         if "ragui" in namespace:
             typer.echo("Starting the RagUI server...")
             os.environ["RAGUI_SCRIPT"] = str(script_path)
-            uvicorn.run("ragui._server:app", reload=reload, port=port)
+            uvicorn.run("ragui.backend.asgi:application", reload=reload, port=port)
         else:
             typer.echo("Error: No RagUI instance found in the script.")
             raise typer.Exit(code=1)
@@ -40,5 +40,5 @@ def dev(script: str, port: int = 8000, reload: bool = True):
         raise typer.Exit(code=1)
 
 
-def main():
+def entrypoint():
     app()
